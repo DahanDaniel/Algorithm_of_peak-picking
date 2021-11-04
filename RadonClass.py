@@ -36,6 +36,7 @@ class Params:
         result += "number of series: " + str(self.S) + "\n"
         result += "resolution: " + str(self.N) + " points\n"
         result += "snr: " + str(self.snr) + "\n"
+        print(result)
         return result
     
     def __repr__(self):
