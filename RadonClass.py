@@ -17,7 +17,7 @@ from scipy.optimize import minimize
 
 class Params:
     
-    def __init__(self, amplitudes, frequencies, damping_coeffs, speeds, number_of_series: int, resolution: int, snr: float):
+    def __init__(self, amplitudes, frequencies, damping_coeffs, speeds, number_of_series, resolution, snr):
         
         self.amplitudes     = amplitudes
         self.frequencies    = frequencies
