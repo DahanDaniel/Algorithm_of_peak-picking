@@ -16,9 +16,7 @@ from scipy.optimize import minimize
 
 
 class Params:
-    
     def __init__(self, amplitudes, frequencies, damping_coeffs, speeds, number_of_series, resolution, snr):
-        
         self.amplitudes     = amplitudes
         self.frequencies    = frequencies
         self.damping_coeffs = damping_coeffs
@@ -36,20 +34,8 @@ class Params:
         result += "number of series: " + str(self.S) + "\n"
         result += "resolution: " + str(self.N) + " points\n"
         result += "snr: " + str(self.snr) + "\n"
-        print(result)
         return result
-    
-    def __repr__(self):
-        result = ""
-        result += "amplitudes: " + str(self.amplitudes) + "\n"
-        result += "frequencies: " + str(self.frequencies) + "\n"
-        result += "damping_coeffs: " + str(self.damping_coeffs) + "\n"
-        result += "speeds: " + str(self.speeds) + "\n"
-        result += "number of series: " + str(self.S) + "\n"
-        result += "resolution: " + str(self.N) + " points\n"
-        result += "snr: " + str(self.snr) + "\n"
-        return result
-    
+        
     
 class Radon:
 
@@ -104,12 +90,15 @@ class Radon:
             FID = np.zeros((Data.S, Data.N), dtype="complex_")
             t = np.linspace(0, 1, Data.N, endpoint=False)
             for i in range(Data.S):
-                for k in range(np.shape(Data.A)[0]):
+                for k in range(np.shape(Data.amplitudes)[0]):
                     FID[i] = np.add(FID[i], Data.amplitudes[k]*np.e**(
                         (2*np.pi*1j*(Data.frequencies[k]+i*Data.speeds[k]+1j*Data.damping_coeffs[k])*t)
                         ))
                     if Data.noise: # Add random noise
-                        FID[i] = np.add(FID[i], Data.snr*np.max(amplitudes)*np.random.uniform(0, 1, Data.N))
+                        FID[i] = np.add(
+                            FID[i],
+                            Data.snr*np.max(Data.amplitudes)*np.random.uniform(0, 1, Data.N)
+                            )
             
             #fix the first point for Fourier Transform
             for i in range(Data.S):
