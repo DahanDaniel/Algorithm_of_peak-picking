@@ -17,14 +17,15 @@ from scipy.optimize import minimize
 
 class Params:
     
-    def __init__(self,A,w,B,dw,S,N):
+    def __init__(self, amplitudes, frequencies, damping_coeffs, speeds, number_of_series: int, resolution: int, snr: float):
         
-        self.A = A # amplitudes
-        self.w = w # frequencies
-        self.B = B # damping coeffs
-        self.dw = dw # changes in frequencies
-        self.S = S # number of series
-        self.N = N # number of points in serie
+        self.amplitudes     = amplitudes
+        self.frequencies    = frequencies
+        self.damping_coeffs = damping_coeffs
+        self.speeds         = speeds
+        self.S   = number_of_series
+        self.N   = resolution # number of points in series
+        self.snr = snr # signal-to-noise ratio, if 0 then no noise is added
     
     
 class Radon:
@@ -77,14 +78,15 @@ class Radon:
         elif (args[0] if len(args) > 0 else None) == 'Params':
             
             #Create FID of model peaks
-            FID = np.zeros((Data.S,Data.N),dtype="complex_")
-            t = np.linspace(0,1,Data.N,endpoint=False)
+            FID = np.zeros((Data.S, Data.N), dtype="complex_")
+            t = np.linspace(0, 1, Data.N, endpoint=False)
             for i in range(Data.S):
                 for k in range(np.shape(Data.A)[0]):
-                    FID[i] = np.add(FID[i], Data.A[k]*np.e**(
-                        (2*np.pi*1j*(Data.w[k]+i*Data.dw[k]+1j*Data.B[k])*t)
+                    FID[i] = np.add(FID[i], Data.amplitudes[k]*np.e**(
+                        (2*np.pi*1j*(Data.frequencies[k]+i*Data.speeds[k]+1j*Data.damping_coeffs[k])*t)
                         ))
-                    # f[i] = np.add(f[i],.5*np.random.randn(n)) # Add random noise
+                    if Data.noise: # Add random noise
+                        FID[i] = np.add(FID[i], Data.snr*np.max(amplitudes)*np.random.uniform(0, 1, Data.N))
             
             #fix the first point for Fourier Transform
             for i in range(Data.S):
