@@ -24,16 +24,16 @@ class Params:
         self.S = S # number of series
         self.N = N # number of points in serie
     
-#     def __str__(self):
-#         result = ""
-#         result += "amplitudes: " + str(self.amplitudes) + "\n"
-#         result += "frequencies: " + str(self.frequencies) + "\n"
-#         result += "damping_coeffs: " + str(self.damping_coeffs) + "\n"
-#         result += "speeds: " + str(self.speeds) + "\n"
-#         result += "number of series: " + str(self.S) + "\n"
-#         result += "resolution: " + str(self.N) + " points\n"
+    def __str__(self):
+        result = ""
+        result += "amplitudes: " + str(self.amplitudes) + "\n"
+        result += "frequencies: " + str(self.frequencies) + "\n"
+        result += "damping_coeffs: " + str(self.damping_coeffs) + "\n"
+        result += "speeds: " + str(self.speeds) + "\n"
+        result += "number of series: " + str(self.S) + "\n"
+        result += "resolution: " + str(self.N) + " points\n"
 #         result += "snr: " + str(self.snr) + "\n"
-#         return result
+        return result
         
     
 class Radon:
