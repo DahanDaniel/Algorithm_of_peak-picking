@@ -17,10 +17,10 @@ from scipy.optimize import minimize
 
 class Params:
     def __init__(self,A,w,B,dw,S,N):
-        self.A = A # amplitudes
-        self.w = w # frequencies
-        self.B = B # damping coeffs
-        self.dw = dw # changes in frequencies
+        self.amplitudes = A # amplitudes
+        self.frequencies = w # frequencies
+        self.damping_coeffs = B # damping coeffs
+        self.speeds = dw # changes in frequencies
         self.S = S # number of series
         self.N = N # number of points in serie
     
