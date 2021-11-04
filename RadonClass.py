@@ -26,7 +26,18 @@ class Params:
         self.S   = number_of_series
         self.N   = resolution # number of points in series
         self.snr = snr # signal-to-noise ratio, if 0 then no noise is added
-       
+    
+    def __str__(self):
+        result = ""
+        result += "amplitudes: " + str(self.amplitudes) + "\n"
+        result += "frequencies: " + str(self.frequencies) + "\n"
+        result += "damping_coeffs: " + str(self.damping_coeffs) + "\n"
+        result += "speeds: " + str(self.speeds) + "\n"
+        result += "number of series: " + str(self.S) + "\n"
+        result += "resolution: " + str(self.N) + " points\n"
+        result += "snr: " + str(self.snr) + "\n"
+        return result
+    
     def __repr__(self):
         result = ""
         result += "amplitudes: " + str(self.amplitudes) + "\n"
