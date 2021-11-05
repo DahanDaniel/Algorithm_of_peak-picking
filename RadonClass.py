@@ -25,7 +25,7 @@ class Params:
         self.N = resolution
     
     def __str__(self):
-        return vars(self)
+        return str(vars(self))
         
     
 class Radon:
