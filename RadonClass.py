@@ -16,13 +16,14 @@ from scipy.optimize import minimize
 
 
 class Params:
-    def __init__(self, amplitudes, frequencies, damping_coeffs, speeds, no_series, resolution):
+    def __init__(self, amplitudes, frequencies, damping_coeffs, speeds, no_series, resolution, snr):
         self.amplitudes = amplitudes
         self.frequencies =frequencies
         self.damping_coeffs = damping_coeffs
         self.speeds = speeds
         self.S = no_series
         self.N = resolution
+        self.snr = snr # signal-to-noise ratio
     
     def __str__(self):
         return str(vars(self))
