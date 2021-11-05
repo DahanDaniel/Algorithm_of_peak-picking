@@ -87,7 +87,7 @@ class Radon:
                     FID[i] = np.add(FID[i], Data.amplitudes[k]*np.e**(
                         (2*np.pi*1j*(Data.frequencies[k]+i*Data.speeds[k]+1j*Data.damping_coeffs[k])*t)
                         ))
-                    if Data.noise: # Add random noise
+                    if Data.snr: # Add random noise
                         FID[i] = np.add(
                             FID[i],
                             Data.snr*np.max(Data.amplitudes)*np.random.uniform(0, 1, Data.N)
