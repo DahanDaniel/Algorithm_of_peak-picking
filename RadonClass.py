@@ -90,7 +90,7 @@ class Radon:
                     if Data.snr: # Add random noise
                         FID[i] = np.add(
                             FID[i],
-                            Data.snr*np.max(Data.amplitudes)*np.random.uniform(0, 1, Data.N)
+                            (1/Data.snr)*np.max(Data.amplitudes)*np.random.uniform(0, 1, Data.N)
                             )
             
             #fix the first point for Fourier Transform
