@@ -31,9 +31,7 @@ class Params:
         
     
 class Radon:
-
     def __init__(self, Data, dwmin, dwmax, ddw, *args, **kwargs):
-        
         '''Data can be a file location string,
         a Params class object containing parameters
         for creating model peaks, a matrix of subsequent
@@ -85,7 +83,7 @@ class Radon:
             for i in range(Data.S):
                 for k in range(np.shape(Data.amplitudes)[0]):
                     total_frequency = Data.frequencies[k] + i*Data.speeds[k]
-                    if total_frequency <= Data.N: # mute frequencies higher than resolution
+                    if 0 <= total_frequency <= Data.N: # mute frequencies higher than resolution
                         FID[i] = np.add(FID[i], Data.amplitudes[k]*np.e**(
                             (2*np.pi*1j*(total_frequency + 1j*Data.damping_coeffs[k])*t)
                             ))
