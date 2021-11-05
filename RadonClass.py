@@ -18,7 +18,7 @@ from scipy.optimize import minimize
 class Params:
     def __init__(self, amplitudes, frequencies, damping_coeffs, speeds, no_series, resolution, snr):
         self.amplitudes = amplitudes
-        self.frequencies =frequencies
+        self.frequencies = frequencies
         self.damping_coeffs = damping_coeffs
         self.speeds = speeds
         self.S = no_series
@@ -26,7 +26,8 @@ class Params:
         self.snr = snr # signal-to-noise ratio
     
     def __str__(self):
-        return str(vars(self))
+        vars_list = [str(key) + ": " + str(val) for key, val in vars(self).items()]
+        return '\n'.join(vars_list)
         
     
 class Radon:
