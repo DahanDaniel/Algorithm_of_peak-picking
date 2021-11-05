@@ -95,7 +95,8 @@ class Radon:
             
             #fix the first point for Fourier Transform
             for i in range(Data.S):
-                FID[i][0] /= 2
+                print(FID[i][0])
+                FID[i][0] = np.max(Data.amplitudes) / 2
             
             self.FID = FID
             self.Spectra = np.fft.fft(FID)
