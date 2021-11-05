@@ -87,10 +87,10 @@ class Radon:
                         FID[i] = np.add(FID[i], Data.amplitudes[k]*np.e**(
                             (2*np.pi*1j*(total_frequency + 1j*Data.damping_coeffs[k])*t)
                             ))
-                    if Data.snr: # Add random noise
-                        FID[i] = np.add(
-                            FID[i],
-                            (1/Data.snr)*np.max(Data.amplitudes)*np.random.uniform(0, 1, Data.N)
+                    if Data.snr: # Add random noise, skip first point
+                        FID[i][1:Data.N] = np.add(
+                            FID[i][1:Data.N],
+                            (1/Data.snr)*np.max(Data.amplitudes)*np.random.uniform(0, 1, Data.N - 1)
                             )
             
             #fix the first point for Fourier Transform
