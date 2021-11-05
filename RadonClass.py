@@ -363,7 +363,7 @@ def Plot_FIDs(R):
     plt.tick_params(left=False)
 
 def plot_all_series_spectra(R):
-    plt.rcParams["figure.figsize"] = (10, 1)
+    plt.rcParams["figure.figsize"] = (20, 2)
     for i in range(R.s):
         plt.figure()
         plt.plot(R.Scale, np.real(R.Spectra[i]), label='%f'%i)
