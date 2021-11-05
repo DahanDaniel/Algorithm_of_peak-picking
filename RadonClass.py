@@ -92,6 +92,7 @@ class Radon:
                             FID[i][1:Data.N],
                             (1/Data.snr)*np.max(Data.amplitudes)*np.random.uniform(0, 1, Data.N - 1)
                             )
+                        FID[i] = np.add(FID[i], -1*np.average(FID[i]))
             
             #fix the first point for Fourier Transform
             for i in range(Data.S):
