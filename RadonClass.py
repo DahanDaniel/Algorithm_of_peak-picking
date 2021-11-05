@@ -84,9 +84,11 @@ class Radon:
             t = np.linspace(0, 1, Data.N, endpoint=False)
             for i in range(Data.S):
                 for k in range(np.shape(Data.amplitudes)[0]):
-                    FID[i] = np.add(FID[i], Data.amplitudes[k]*np.e**(
-                        (2*np.pi*1j*(Data.frequencies[k]+i*Data.speeds[k]+1j*Data.damping_coeffs[k])*t)
-                        ))
+                    total_frequency = Data.frequencies[k] + i*Data.speeds[k]
+                    if total_frequency <= Data.N: # mute frequencies higher than resolution
+                        FID[i] = np.add(FID[i], Data.amplitudes[k]*np.e**(
+                            (2*np.pi*1j*(total_frequency + 1j*Data.damping_coeffs[k])*t)
+                            ))
                     if Data.snr: # Add random noise
                         FID[i] = np.add(
                             FID[i],
