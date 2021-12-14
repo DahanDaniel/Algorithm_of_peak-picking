@@ -173,9 +173,3 @@ class Radon:
         )
 
         return radon
-
-
-## test
-
-
-print(radon.radon_spectra)
