@@ -1,6 +1,7 @@
 from typing import Union, List, TypeVar
 
 import numpy as np
+import matplotlib.pyplot as plt
 
 Num = Union[int, float]
 R = TypeVar("R", bound="Radon")
@@ -18,7 +19,7 @@ class Radon:
 
     dwmin: Num  # Lower limit of the speed dimension
     dwmax: Num  # Upper limit of the speed dimension
-    ddw: Num  # Resolution step in the speed dimension
+    ndw: int  # Resolution of the speed dimension
 
     fid: np.ndarray
     spectra: np.ndarray
@@ -34,7 +35,7 @@ class Radon:
         n,
         dwmin,
         dwmax,
-        ddw,
+        ndw,
         snr=None,
     ):
         self.frequency = frequency
@@ -48,7 +49,7 @@ class Radon:
 
         self.dwmin = dwmin
         self.dwmax = dwmax
-        self.ddw = ddw
+        self.ndw = ndw
 
         self.transform()
 
@@ -61,7 +62,7 @@ class Radon:
         # reflect the original parameters.
 
         # Create FIDs with doubled resolution and shifted frequencies.
-        n2 = self.n
+        n2 = 2 * self.n
         freq_shift = int(self.n / 2)
         self.frequency += freq_shift
         fid = np.zeros((self.s, n2), dtype="complex64")
@@ -70,8 +71,8 @@ class Radon:
             for k in range(np.shape(self.amplitude)[0]):
                 tot_freq = self.frequency[k] + i * self.speed[k]
                 if (
-                    freq_shift <= tot_freq <= n2 - freq_shift
-                ):  # Mute frequencies higher than the resolution.
+                    0.8 * freq_shift <= tot_freq <= n2 - 0.8 * freq_shift
+                ):  # Mute frequencies out of the desired range.
                     exponent = (
                         2 * np.pi * 1j * (tot_freq + 1j * self.damping[k]) * t
                     )
@@ -85,7 +86,7 @@ class Radon:
                         * np.max(self.amplitude)
                         * np.random.uniform(0, 1, n2 - 1)
                     )
-                    fid[i][1:n2] = np.add(fid[i][1 : self.n], noise)
+                    fid[i][1:n2] = np.add(fid[i][1:n2], noise)
                     fid[i] = np.add(fid[i], -1 * np.average(noise))
 
         # Fix the first point for the Fast Fourier Transform.
@@ -93,15 +94,15 @@ class Radon:
             fid[i][0] /= 2
 
         # Phase correction
-        dw_arr = np.arange(
-            self.dwmin, self.dwmax, self.ddw
+        dw_arr = np.linspace(
+            self.dwmin, self.dwmax, self.ndw
         )  # Domain of rates of change.
-        p = np.zeros((len(dw_arr), *np.shape(self.fid)), dtype="complex64")
+        p = np.zeros((len(dw_arr), *np.shape(fid)), dtype="complex64")
         a = 2 * np.pi * 1j * np.linspace(0, 1, n2, endpoint=False)
         for i in range(len(dw_arr)):
             b = a * dw_arr[i]
             for k in range(self.s):
-                p[i][k] = self.fid[k] * np.e ** (-b * k)
+                p[i][k] = fid[k] * np.e ** (-b * k)
 
         # "Diagonal" summation.
         pr = np.zeros((len(dw_arr), n2), dtype="complex64")
@@ -111,7 +112,7 @@ class Radon:
 
         # Set fields values taking into account initial resolution doubling.
         self.fid = fid[: self.n]
-        self.spectra = np.fft.fft(self.fid)[freq_shift : n2 - freq_shift]
+        self.spectra = np.fft.fft(self.fid)[:, freq_shift : n2 - freq_shift]
         self.radon_spectrum = np.fft.fft(pr)[:, freq_shift : n2 - freq_shift]
 
     def generate_random_data(ranges_dict: dict) -> R:
@@ -119,7 +120,7 @@ class Radon:
         The ranges_dict variable should contain the following Radon
         class fields' names strings as keys:
             ["frequency", "amplitude", "damping", "speed",
-            "s", "n", "dwmin", "dwmax", "ddw", "snr"]
+            "s", "n", "dwmin", "dwmax", "ndw", "snr"]
         and corresponding tuples specifying their ranges as values, as
         well as a "number_of_peaks" key with an analogous tuple of ints.
 
@@ -144,7 +145,7 @@ class Radon:
 
         # Draw signal-to-noise ratio if specified.
         snr = (
-            np.random.uniform(*ranges_dict["snr"], N)
+            np.random.uniform(*ranges_dict["snr"])
             if "snr" in ranges_dict.keys()
             else None
         )
@@ -156,7 +157,7 @@ class Radon:
         # Draw the length and step of Radon dimension.
         dwmin = np.random.uniform(*ranges_dict["dwmin"])
         dwmax = np.random.uniform(*ranges_dict["dwmax"])
-        ddw = np.random.uniform(*ranges_dict["ddw"])
+        ndw = np.random.randint(*ranges_dict["ndw"])
 
         # Create a Radon instance.
         radon = Radon(
@@ -168,8 +169,36 @@ class Radon:
             n,
             dwmin,
             dwmax,
-            ddw,
+            ndw,
             snr,
         )
 
         return radon
+
+
+if __name__ == "__main__":
+    for _ in range(5):
+        ranges_dict = {
+            "number_of_peaks": (0, 10),
+            "frequency": (0, 256),
+            "amplitude": (0.1, 5),
+            "damping": (0.1, 10),
+            "speed": (-10, 10),
+            "s": (20, 21),
+            "n": (256, 257),
+            "dwmax": (10, 10),
+            "dwmin": (-10, -10),
+            "ndw": (256, 257),
+            "snr": (10, 100),
+        }
+        radon = Radon.generate_random_data(ranges_dict)
+
+        fig = plt.figure()
+        plt.plot(radon.spectra[0].real)
+        plt.show(block=False)
+
+        fig = plt.figure()
+        plt.imshow(radon.radon_spectrum.real.T)
+        plt.show(block=False)
+
+    plt.show()
