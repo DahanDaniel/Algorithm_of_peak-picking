@@ -64,12 +64,12 @@ class Radon:
         # Create FIDs with doubled resolution and shifted frequencies.
         n2 = 2 * self.n
         freq_shift = int(self.n / 2)
-        self.frequency += freq_shift
+        shifted_freq = self.frequency + freq_shift
         fid = np.zeros((self.s, n2), dtype="complex64")
         t = np.linspace(0, 1, n2, endpoint=False)
         for i in range(self.s):
             for k in range(np.shape(self.amplitude)[0]):
-                tot_freq = self.frequency[k] + i * self.speed[k]
+                tot_freq = shifted_freq[k] + i * self.speed[k]
                 if (
                     0.8 * freq_shift <= tot_freq <= n2 - 0.8 * freq_shift
                 ):  # Mute frequencies out of the desired range.
