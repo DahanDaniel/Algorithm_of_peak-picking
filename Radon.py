@@ -22,7 +22,7 @@ class Radon:
 
     fid: np.ndarray
     spectra: np.ndarray
-    radon_spectra: np.ndarray
+    radon_spectrum: np.ndarray
 
     def __init__(
         self,
@@ -50,25 +50,30 @@ class Radon:
         self.dwmax = dwmax
         self.ddw = ddw
 
-        self.fid = self.create_fid()
-        self.spectra = np.fft.fft(self.fid)
-        self.radon_spectra = self.radon_transform()
+        self.transform()
 
-    def create_fid(self) -> np.ndarray:
-        fid = np.zeros((self.s, self.n), dtype="complex64")
-        t = np.linspace(0, 1, self.n, endpoint=False)
+    def transform(self):
+        # To avoid aliasing, the starting resolution is doubled and all
+        # frequencies moved to the middle of the spectrum, essentialy
+        # creating margins from both sides of the spectrum. All
+        # frequencies out of the desired range are then muted, and the
+        # resulting, doubled in size spectrum is finally trimmed to
+        # reflect the original parameters.
+
+        # Create FIDs with doubled resolution and shifted frequencies.
+        n2 = self.n
+        freq_shift = int(self.n / 2)
+        self.frequency += freq_shift
+        fid = np.zeros((self.s, n2), dtype="complex64")
+        t = np.linspace(0, 1, n2, endpoint=False)
         for i in range(self.s):
             for k in range(np.shape(self.amplitude)[0]):
-                total_frequency = self.frequency[k] + i * self.speed[k]
+                tot_freq = self.frequency[k] + i * self.speed[k]
                 if (
-                    0 <= total_frequency <= self.n
+                    freq_shift <= tot_freq <= n2 - freq_shift
                 ):  # Mute frequencies higher than the resolution.
                     exponent = (
-                        2
-                        * np.pi
-                        * 1j
-                        * (total_frequency + 1j * self.damping[k])
-                        * t
+                        2 * np.pi * 1j * (tot_freq + 1j * self.damping[k]) * t
                     )
                     fid[i] = np.add(
                         fid[i],
@@ -78,41 +83,36 @@ class Radon:
                     noise = (
                         (1 / self.snr)
                         * np.max(self.amplitude)
-                        * np.random.uniform(0, 1, self.n - 1)
+                        * np.random.uniform(0, 1, n2 - 1)
                     )
-                    fid[i][1 : self.n] = np.add(fid[i][1 : self.n], noise)
+                    fid[i][1:n2] = np.add(fid[i][1 : self.n], noise)
                     fid[i] = np.add(fid[i], -1 * np.average(noise))
 
         # Fix the first point for the Fast Fourier Transform.
         for i in range(self.s):
             fid[i][0] /= 2
 
-        return fid
-
-    def radon_transform(self) -> np.ndarray:
-        s, n = np.shape(self.fid)
-
         # Phase correction
         dw_arr = np.arange(
             self.dwmin, self.dwmax, self.ddw
-        )  # domain of rates of change
+        )  # Domain of rates of change.
         p = np.zeros((len(dw_arr), *np.shape(self.fid)), dtype="complex64")
-        a = 2 * np.pi * 1j * np.linspace(0, 1, n, endpoint=False)
+        a = 2 * np.pi * 1j * np.linspace(0, 1, n2, endpoint=False)
         for i in range(len(dw_arr)):
             b = a * dw_arr[i]
-            for k in range(s):
+            for k in range(self.s):
                 p[i][k] = self.fid[k] * np.e ** (-b * k)
 
-        # "Diagonal" summation
-        pr = np.zeros((len(dw_arr), n), dtype="complex64")
+        # "Diagonal" summation.
+        pr = np.zeros((len(dw_arr), n2), dtype="complex64")
         for i in range(len(dw_arr)):
-            for j in range(s):
+            for j in range(self.s):
                 pr[i] += p[i][j]
 
-        # Fourier Transform
-        radon_spectra = np.fft.fft(pr)
-
-        return radon_spectra
+        # Set fields values taking into account initial resolution doubling.
+        self.fid = fid[: self.n]
+        self.spectra = np.fft.fft(self.fid)[freq_shift : n2 - freq_shift]
+        self.radon_spectrum = np.fft.fft(pr)[:, freq_shift : n2 - freq_shift]
 
     def generate_random_data(ranges_dict: dict) -> R:
         """
