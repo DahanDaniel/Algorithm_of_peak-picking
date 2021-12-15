@@ -1,4 +1,4 @@
-from typing import Union, List, TypeVar
+from typing import Union, List, Tuple, TypeVar
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -8,7 +8,7 @@ R = TypeVar("R", bound="Radon")
 
 
 class Radon:
-    frequency: List[Num]
+    frequency: List[Num or tuple]  # singlets or multiplets
     amplitude: List[Num]
     damping: List[Num]
     speed: List[Num]
@@ -64,7 +64,7 @@ class Radon:
         # Create FIDs with doubled resolution and shifted frequencies.
         n2 = 2 * self.n
         freq_shift = int(self.n / 2)
-        shifted_freq = self.frequency + freq_shift
+        shifted_freq = [freq + freq_shift for freq in self.frequency]
         fid = np.zeros((self.s, n2), dtype="complex64")
         t = np.linspace(0, 1, n2, endpoint=False)
         for i in range(self.s):
@@ -123,6 +123,11 @@ class Radon:
             "s", "n", "dwmin", "dwmax", "ndw", "snr"]
         and corresponding tuples specifying their ranges as values, as
         well as a "number_of_peaks" key with an analogous tuple of ints.
+        If the "frequency" tuple contains more than two values, than the
+        third value determines the maximal number of components in a
+        single multiplet, and the fourth value determines the maximal
+        distance between components (the amplitude parameter determines
+        then the amplitude of the highest peak in the multiplet).
 
         If you want to set a specific value to constant just pass the
         range tuple with lower_bound == upper_bound, or
@@ -132,16 +137,32 @@ class Radon:
         General key-value pair form:
         "field_name': (lower_bound, upper_bound)
 
+        To generate multiples in spectra the "frequency" field should be
+        structured as: (lower_bound, upper_bound, max_multiplet, radius)
+
         If snr is not specified or set to 0, then no noise is added.
+        If max_multiplets is not specified, only singlets are generated.
         """
         # Draw a random number of peaks.
         N = np.random.randint(*ranges_dict["number_of_peaks"])
 
         # Randomize peaks' parameters.
-        amplitude = np.random.uniform(*ranges_dict["amplitude"], N)
-        frequency = np.random.uniform(*ranges_dict["frequency"], N)
         damping = np.random.uniform(*ranges_dict["damping"], N)
         speed = np.random.uniform(*ranges_dict["speed"], N)
+        if len(ranges_dict["frequency"]) == 4:
+            frequency, amplitude = generate_multiplets(
+                N,
+                ranges_dict["frequency"][:2],
+                ranges_dict["amplitude"],
+                ranges_dict["frequency"][2],
+                ranges_dict["frequency"][3],
+            )
+        else:
+            # Only singlets
+            frequency = np.random.uniform(*ranges_dict["frequency"], N)
+            amplitude = np.random.uniform(
+                *ranges_dict["amplitude"], len(frequency)
+            )
 
         # Draw signal-to-noise ratio if specified.
         snr = (
@@ -176,12 +197,88 @@ class Radon:
         return radon
 
 
+def get_pascal_row(n: int) -> List[int]:
+    """Returns n-th row of Pascal's trangle as a list."""
+
+    if n == 0:
+        return [1]
+    if n == 1:
+        return [1, 1]
+    row = [1, 1]
+    for i in range(2, n + 1):
+        prev_row = row
+        row = [1]
+        for i in range(len(prev_row) - 1):
+            row.append(prev_row[i] + prev_row[i + 1])
+        row.append(1)
+
+    return row
+
+
+def total_int_into_rand_list(total: int, max_el: int) -> List[int]:
+    """This function creates a random list of non-zero integers that sum
+    up to the given number, ie. f(7, 3) -> [2, 1, 3, 1]"""
+
+    result_list = []
+    sum = 0
+    while sum != total:
+        rand_num = np.random.randint(1, max_el + 1)
+        if sum + rand_num < total:
+            result_list.append(rand_num)
+            sum += rand_num
+        else:
+            num = total - sum
+            result_list.append(num)
+            sum += num  # break
+
+    return result_list
+
+
+def generate_multiplets(
+    n_o_peaks: int,
+    freq_bounds: tuple,
+    amp_bounds: tuple,
+    max_multiplet: int,
+    max_radius: float,
+) -> Tuple[List[Num], List[Num]]:
+    multiplets_list = total_int_into_rand_list(n_o_peaks, max_multiplet)
+
+    frequency = []
+    amplitude = []
+    for multiplet_size in multiplets_list:
+        # Generate frequencies averaging to the drawn frequency, radius
+        # apart from each other.
+        radius = np.random.uniform(max_radius)
+        main_freq = np.random.uniform(*freq_bounds)
+        freqs = np.linspace(
+            main_freq - multiplet_size * radius,
+            main_freq + multiplet_size * radius,
+            multiplet_size,
+            endpoint=True,
+        )
+        frequency = np.concatenate((frequency, freqs)).tolist()
+
+        # Generate amplitudes with proper proportions.
+        main_amp = np.random.uniform(*amp_bounds)
+        pascal_row = get_pascal_row(multiplet_size - 1)
+        scaling_list = [n / max(pascal_row) for n in pascal_row]
+        amps = [scale_factor * main_amp for scale_factor in scaling_list]
+        amplitude = np.concatenate((amplitude, amps)).tolist()
+
+    return frequency, amplitude
+
+
 if __name__ == "__main__":
-    for _ in range(5):
+    for _ in range(2):
         ranges_dict = {
-            "number_of_peaks": (0, 10),
-            "frequency": (0, 256),
-            "amplitude": (0.1, 5),
+            "number_of_peaks": (1, 10),
+            "frequency": (
+                0,
+                256,
+                4,
+                10,
+            ),  # lower_bound, upper_bound, max_multiplet, max_radius
+            "amplitude": (1, 5),
             "damping": (0.1, 10),
             "speed": (-10, 10),
             "s": (20, 21),
